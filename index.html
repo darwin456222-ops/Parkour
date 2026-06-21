@@ -122,7 +122,7 @@ characterList.forEach(char => {
     images[char.name].src = `${char.name}.jpg`;
 });
 images.Dot = new Image();
-images.Dot.src = 'Dot.jpg'; // Toplanacak parça resmi
+images.Dot.src = 'Dot.jpg';
 
 let currentLevel = parseInt(localStorage.getItem("pets_level")) || 1;
 let unlockedCharIndex = parseInt(localStorage.getItem("pets_unlocked")) || 0;
@@ -138,7 +138,6 @@ let keys = { left: false, right: false, jump: false };
 let levelTimer = 25; 
 let lastTimeUpdate = Date.now();
 let particles = [];
-let flashRedFrames = 0;
 let portalPulseAngle = 0;
 
 const player = {
@@ -161,7 +160,7 @@ function createParticles(x, y, color, count = 5) {
     }
 }
 
-// 150 LEVEL GENERATOR (Sadece platform, duvar, süre ve çikolata odaklı)
+// 150 LEVEL GENERATOR
 function generateLevel(lvl) {
     let difficulty = Math.min(lvl / 25, 5); 
     let seed = lvl * 1543;
@@ -187,9 +186,9 @@ function generateLevel(lvl) {
         let pType = 'normal';
         let rType = randomSeed();
         
-        if (lvl > 2 && rType > 0.80) pType = 'wall'; // Turuncu dikey sütun (Duvar Zıplaması için)
-        else if (lvl > 4 && rType > 0.60) pType = 'crumbling'; // Kırılan platformlar
-        else if (lvl > 10 && rType <= 0.35) pType = 'moving'; // Hareketli platformlar
+        if (lvl > 2 && rType > 0.80) pType = 'wall'; 
+        else if (lvl > 4 && rType > 0.60) pType = 'crumbling'; 
+        else if (lvl > 10 && rType <= 0.35) pType = 'moving'; 
 
         levelData.platforms.push({ 
             x: currentX, y: currentY, width: pType === 'wall' ? 24 : pWidth, height: pType === 'wall' ? 130 : 15, 
@@ -234,15 +233,15 @@ function checkCollision(obj1, obj2) {
            obj1.y + obj1.h > obj2.y;
 }
 
-// BELİRTTİĞİN TV KUMANDA DÜZENİ (Sarı, Turuncu, Yeşil, Pembe ve Geri Tuşu)
+// TUŞ KİLİTLENMESİNİ ENGELLEYEN YENİLENMİŞ KONTROL YAPISI
 window.addEventListener("keydown", (e) => {
     if ([37, 38, 39, 40, 8, 461].includes(e.keyCode)) e.preventDefault();
 
-    if (e.keyCode === 37) { keys.left = true; keys.right = false; } // Sarı -> Sol
-    if (e.keyCode === 39) { keys.right = true; keys.left = false; } // Turuncu -> Sağ
-    if (e.keyCode === 38) { keys.jump = true; } // Yeşil -> Zıplama
+    if (e.keyCode === 37) { keys.left = true; keys.right = false; } // Sarı (Sol)
+    if (e.keyCode === 39) { keys.right = true; keys.left = false; } // Turuncu (Sağ)
+    if (e.keyCode === 38) { keys.jump = true; } // Yeşil (Zıplama)
     
-    if (e.keyCode === 40) { // Pembe -> Dash (Aşağı Tuşu)
+    if (e.keyCode === 40) { // Pembe (Dash)
         if (player.canDash && !player.dashActive) {
             player.dashActive = true;
             player.dashTimer = 10; 
@@ -253,7 +252,7 @@ window.addEventListener("keydown", (e) => {
         }
     }
 
-    if (e.keyCode === 8 || e.keyCode === 461) { // Kumanda Geri Tuşu -> Karakter Değiştirme
+    if (e.keyCode === 8 || e.keyCode === 461) { // Geri Tuşu -> Karakter Değiştirme
         activeCharIndex++;
         if (activeCharIndex > unlockedCharIndex || activeCharIndex >= characterList.length) {
             activeCharIndex = 0;
@@ -262,8 +261,11 @@ window.addEventListener("keydown", (e) => {
     }
 });
 
+// PARMAĞINI TUŞTAN ÇEKTİĞİNDE ANINDA DURDURMA KOMUTLARI
 window.addEventListener("keyup", (e) => {
-    if (e.keyCode === 38) keys.jump = false;
+    if (e.keyCode === 37) keys.left = false;  // Sol bırakıldıysa dur
+    if (e.keyCode === 39) keys.right = false; // Sağ bırakıldıysa dur
+    if (e.keyCode === 38) keys.jump = false;  // Zıplama bırakıldıysa kes
 });
 
 function update() {
@@ -285,7 +287,9 @@ function update() {
         if (player.dashTimer <= 0) player.dashActive = false;
     } else {
         if (keys.left) player.velX = -player.speed;
-        if (keys.right) player.velX = player.speed;
+        else if (keys.right) player.velX = player.speed;
+        else player.velX = 0; // Hiçbir tuşa basılmıyorsa hızı anında sıfırla (Kilitlenmeyi çözen kısım)
+        
         player.velX *= friction;
         player.velY += gravity;
     }
@@ -320,7 +324,7 @@ function update() {
         if (player.x + player.w > p.x && player.x < p.x + p.width &&
             player.y + player.h > p.y && player.y < p.y + p.height) {
 
-            if (p.type === 'wall') { // DUVAR ZIPLAMASI MANTIĞI
+            if (p.type === 'wall') { 
                 if (player.velY > 0) {
                     player.velY = 1.2; 
                     isWallSliding = true;
@@ -414,12 +418,11 @@ function resetPosition(resetTime) {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Platform Çizimleri
     activeLevel.platforms.forEach(p => {
         if (p.broken) return;
         if (p.type === 'normal') ctx.fillStyle = "#047857"; 
         else if (p.type === 'moving') ctx.fillStyle = "#1d4ed8"; 
-        else if (p.type === 'wall') ctx.fillStyle = "#b45309"; // Duvar rengi (Turuncu sütunlar)
+        else if (p.type === 'wall') ctx.fillStyle = "#b45309"; 
         else if (p.type === 'crumbling') ctx.fillStyle = p.stepped ? "#b91c1c" : "#78350f";
         
         ctx.fillRect(p.x, p.y, p.width, p.height);
@@ -427,13 +430,11 @@ function draw() {
         ctx.fillRect(p.x, p.y, p.width, 3); 
     });
 
-    // Çikolatalar
     activeLevel.chocolates.forEach(choc => {
         if (choc.collected) return;
         ctx.fillStyle = "#f1c40f"; ctx.fillRect(choc.x, choc.y, choc.width, choc.height);
     });
 
-    // Parça Görseli Çizimi (Dot.jpg varsa yüklenir, yoksa mavi yuvarlak çizilir)
     if (!levelPieceCollected) {
         if (images.Dot && images.Dot.complete && images.Dot.naturalWidth !== 0) {
             ctx.drawImage(images.Dot, activeLevel.dotPiece.x, activeLevel.dotPiece.y, activeLevel.dotPiece.width, activeLevel.dotPiece.height);
@@ -443,11 +444,9 @@ function draw() {
         }
     }
 
-    // Portal
     ctx.fillStyle = levelPieceCollected ? "#8b5cf6" : "#4b5563";
     ctx.fillRect(activeLevel.portal.x, activeLevel.portal.y, activeLevel.portal.width, activeLevel.portal.height);
 
-    // KARAKTER GÖRSELİ ÇİZİMİ (Örn: Moosey.jpg vb. varsa yüklenir, yoksa düz renk çizilir)
     let curChar = characterList[activeCharIndex];
     if (images[curChar.name] && images[curChar.name].complete && images[curChar.name].naturalWidth !== 0) {
         ctx.drawImage(images[curChar.name], player.x, player.y, player.w, player.h);
@@ -458,7 +457,6 @@ function draw() {
         ctx.fillText(curChar.letter, player.x + 8, player.y + 20);
     }
 
-    // Partiküller
     particles.forEach(p => {
         ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color;
         ctx.fillRect(p.x, p.y, p.size, p.size); ctx.restore();
