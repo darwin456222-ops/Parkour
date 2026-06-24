@@ -3,131 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>The Pets: Hardcore Arena V3</title>
+    <title>The Pets: Hardcore Arena V4</title>
     <style>
-        * {
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; margin: 0; padding: 0; }
         body {
-            background-color: #022c22;
-            font-family: 'Courier New', Courier, monospace;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            width: 100vw;
-            color: #34d399;
+            background-color: #022c22; font-family: 'Courier New', Courier, monospace;
+            overflow: hidden; display: flex; align-items: center; justify-content: center;
+            height: 100vh; width: 100vw; color: #34d399; touch-action: none;
         }
         #gameContainer {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #01140f;
+            position: relative; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center; background: #01140f;
         }
         canvas {
-            background: #01140f;
-            display: block;
-            border: 2px solid #10b981;
-            box-shadow: 0 0 30px rgba(0, 255, 100, 0.15);
-            z-index: 1;
+            background: #01140f; display: block; border: 2px solid #10b981;
+            box-shadow: 0 0 30px rgba(0, 255, 100, 0.15); z-index: 1;
         }
 
-        /* HARDCORE V3 HUD ARAYÜZÜ */
+        /* HUD ARAYÜZÜ */
         #hud {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            color: #34d399;
-            font-size: 11px;
-            font-weight: bold;
-            text-shadow: 0 0 5px rgba(0,0,0,0.9);
-            background: rgba(2, 44, 34, 0.9);
-            padding: 8px 12px;
-            border: 1px solid #10b981;
-            border-radius: 0px;
-            z-index: 1000;
-            gap: 5px;
-            pointer-events: auto;
+            position: absolute; top: 10px; left: 10px; right: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 11px; font-weight: bold; text-shadow: 0 0 5px rgba(0,0,0,0.9);
+            background: rgba(2, 44, 34, 0.9); padding: 8px 12px;
+            border: 1px solid #10b981; z-index: 1000;
         }
+        .hud-item { display: flex; align-items: center; gap: 4px; }
+        #coinBadge { color: #f1c40f; background: rgba(241, 196, 15, 0.15); padding: 2px 6px; border: 1px solid #f1c40f; }
 
-        .hud-item {
-            display: flex;
-            align-items: center;
-            gap: 4px;
+        /* MOBIL DOKUNMATIK ALANLAR (Görünmez) */
+        #touchZones {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; display: flex;
         }
+        .touch-left-container { width: 50%; height: 100%; display: flex; }
+        .touch-btn { flex: 1; height: 100%; }
+        .touch-right-container { width: 50%; height: 100%; }
 
-        #timeBadge {
-            color: #f59e0b;
-            background: rgba(245, 158, 11, 0.15);
-            padding: 1px 6px;
-            border: 1px dashed #f59e0b;
-            transition: all 0.2s;
+        /* ÖLÜM / REKLAM EKRANI (Monetizasyon Simülasyonu) */
+        #gameOverScreen {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(2, 44, 34, 0.95); border: 2px solid #f59e0b; padding: 20px;
+            text-align: center; z-index: 2000; display: none; flex-direction: column; gap: 15px;
+            box-shadow: 0 0 40px rgba(245, 158, 11, 0.3);
         }
-
-        .time-bonus {
-            animation: flashGreen 0.5s ease-out;
+        .btn {
+            padding: 10px 15px; font-family: inherit; font-weight: bold; border: none;
+            cursor: pointer; font-size: 14px; text-transform: uppercase; transition: transform 0.1s;
         }
-
-        #changeCharBtn {
-            background: #10b981;
-            color: #022c22;
-            border: 1px solid #fff;
-            padding: 2px 7px;
-            font-weight: bold;
-            font-size: 11px;
-            cursor: pointer;
-        }
-
-        #changeCharBtn.active {
-            animation: pulse 0.5s infinite alternate;
-            background: #f59e0b !important;
-            color: #000;
-        }
-
-        #resetGameBtn {
-            background: #4b5563;
-            color: white;
-            border: none;
-            padding: 2px 6px;
-            font-weight: bold;
-            font-size: 10px;
-            cursor: pointer;
-        }
-        #resetGameBtn:active { background: #dc2626; }
-
-        @keyframes pulse {
-            from { transform: scale(1); }
-            to { transform: scale(1.05); }
-        }
-        @keyframes flashGreen {
-            0% { background: rgba(16, 185, 129, 0.8); color: #fff; transform: scale(1.15); }
-            100% { background: rgba(245, 158, 11, 0.15); color: #f59e0b; transform: scale(1); }
-        }
+        .btn:active { transform: scale(0.95); }
+        .btn-ad { background: #f59e0b; color: #000; border: 1px solid #fff; }
+        .btn-restart { background: #dc2626; color: #fff; }
     </style>
 </head>
 <body>
 
 <div id="gameContainer">
     <canvas id="gameCanvas" width="800" height="400"></canvas>
+    
+    <div id="touchZones">
+        <div class="touch-left-container">
+            <div class="touch-btn" id="btnLeft"></div>
+            <div class="touch-btn" id="btnRight"></div>
+        </div>
+        <div class="touch-right-container" id="btnJump"></div>
+    </div>
 
     <div id="hud">
-        <div class="hud-item">SVY: <span id="levelText">1</span>/150</div>
-        <div class="hud-item">SÜRE: <span id="timeBadge"><span id="timerText">25</span>s</span></div>
-        <div class="hud-item">PET: <button id="changeCharBtn">Moosey</button></div>
+        <div class="hud-item">SVY: <span id="levelText">1</span></div>
+        <div class="hud-item">PET: <span id="charText" style="color:#10b981">Moosey</span></div>
         <div class="hud-item">PARÇA: <span id="piecesText">0/1</span></div>
-        <button id="resetGameBtn" title="Oyunu Sıfırla">SIFIRLA ❌</button>
+        <div class="hud-item" id="coinBadge">ÇİKOLATA: <span id="coinText">0</span></div>
+    </div>
+
+    <div id="gameOverScreen">
+        <h2 style="color: #ef4444; margin-bottom: 5px;">YANDIN!</h2>
+        <p style="color: #fff; font-size: 12px;">Seviyeyi kaybetmek üzere misin?</p>
+        <button class="btn btn-ad" id="adReviveBtn">▶ REKLAM İZLE & DİRİL</button>
+        <button class="btn btn-restart" id="restartLevelBtn">BAŞTAN BAŞLA</button>
     </div>
 </div>
 
@@ -139,275 +91,67 @@ function resizeGame() {
     const containerWidth = window.innerWidth;
     const containerHeight = window.innerHeight;
     const gameRatio = 800 / 400;
-
     if (containerWidth / containerHeight > gameRatio) {
-        canvas.style.width = (containerHeight * gameRatio) + "px";
-        canvas.style.height = containerHeight + "px";
+        canvas.style.width = (containerHeight * gameRatio) + "px"; canvas.style.height = containerHeight + "px";
     } else {
-        canvas.style.width = containerWidth + "px";
-        canvas.style.height = (containerWidth / gameRatio) + "px";
+        canvas.style.width = containerWidth + "px"; canvas.style.height = (containerWidth / gameRatio) + "px";
     }
 }
-window.addEventListener("resize", resizeGame);
-window.addEventListener("orientationchange", resizeGame);
-resizeGame();
+window.addEventListener("resize", resizeGame); resizeGame();
 
-// GÜNCELLEME: Yeni Hardcore Ana 9'lu Kadro ve Mekanik İstatistikleri Entegre Edildi!
 const characterList = [
-    { name: "Moosey", color: "#10b981", letter: "M", speed: 4.4, jump: -11.2 },
-    { name: "Sugar", color: "#f43f5e", letter: "Su", speed: 4.2, jump: -12.2 },
-    { name: "Squeak", color: "#38bdf8", letter: "Sq", speed: 5.3, jump: -11.0 }, // Jöle gibi kayar, hızlı koşar!
-    { name: "Gus", color: "#eab308", letter: "G", speed: 3.9, jump: -11.4 },
-    { name: "Dot", color: "#a855f7", letter: "D", speed: 4.8, jump: -10.8 },
-    { name: "Flip", color: "#f97316", letter: "Fl", speed: 4.5, jump: -11.3 },
-    { name: "Yeyet", color: "#ec4899", letter: "Y", speed: 4.3, jump: -11.0 },
-    { name: "Blook", color: "#8b5cf6", letter: "Bl", speed: 4.6, jump: -11.1 },
-    { name: "Blinky", color: "#14b8a6", letter: "B", speed: 4.2, jump: -11.5 }
+    { name: "Moosey", color: "#10b981", speed: 4.4, jump: -11.2 },
+    { name: "Sugar", color: "#f43f5e", speed: 4.2, jump: -12.2 },
+    { name: "Squeak", color: "#38bdf8", speed: 5.3, jump: -11.0 }
 ];
 
+// Kalıcı Veriler
 let currentLevel = parseInt(localStorage.getItem("pets_level")) || 1;
-let unlockedCharIndex = parseInt(localStorage.getItem("pets_unlocked")) || 0;
+let totalCoins = parseInt(localStorage.getItem("pets_coins")) || 0;
+document.getElementById("coinText").innerText = totalCoins;
+
 let activeCharIndex = 0;
-
-function saveProgress() {
-    localStorage.setItem("pets_level", currentLevel);
-    localStorage.setItem("pets_unlocked", unlockedCharIndex);
-}
-
-const images = {};
-characterList.forEach(char => {
-    images[char.name] = new Image();
-    images[char.name].src = `${char.name}.jpg`;
-});
-images.Dot = new Image();
-images.Dot.src = 'Dot.jpg';
-
 let levelPieceCollected = false;
+let isGameOver = false;
+
+// Kontroller
 let keys = { left: false, right: false, jump: false };
-let levelTimer = 25; 
-let lastTimeUpdate = Date.now();
+
+// Profesyonel Fizik ve Game Feel Değişkenleri
+let lastTime = performance.now();
+const gravity = 0.52;
+let friction = 0.80;
+let coyoteTimer = 0;
+const COYOTE_TIME_MAX = 0.1; // 100ms boşlukta zıplama toleransı
+let jumpBufferTimer = 0;
+const JUMP_BUFFER_MAX = 0.15; // 150ms erken zıplama toleransı
+let screenShakeFrames = 0;
 
 let particles = [];
-let flashRedFrames = 0;
-let portalPulseAngle = 0;
 
-const player = {
-    x: 60,
-    y: 200,
-    w: 32,
-    h: 32,
-    velX: 0,
-    velY: 0,
-    jumping: false,
-    grounded: false,
-    speed: 4.4
+const player = { x: 60, y: 200, w: 32, h: 32, velX: 0, velY: 0, grounded: false, speed: 4.4 };
+
+// Mobil Dokunmatik Algılayıcılar
+const btnLeft = document.getElementById("btnLeft");
+const btnRight = document.getElementById("btnRight");
+const btnJump = document.getElementById("btnJump");
+
+const addTouchEvents = (el, keyName) => {
+    el.addEventListener("touchstart", (e) => { e.preventDefault(); keys[keyName] = true; if(keyName === 'jump') jumpBufferTimer = JUMP_BUFFER_MAX; });
+    el.addEventListener("touchend", (e) => { e.preventDefault(); keys[keyName] = false; });
 };
+addTouchEvents(btnLeft, 'left');
+addTouchEvents(btnRight, 'right');
+addTouchEvents(btnJump, 'jump');
 
-const gravity = 0.52; // Hardcore süzülme hissiyatı için yerçekimi optimize edildi
-let friction = 0.80;
-
-// MOBİL VE MOUSE BUTONLARI
-const canvasButtons = {
-    left: { x: 55, y: 325, r: 35, active: false, label: "◀" },
-    right: { x: 145, y: 325, r: 35, active: false, label: "▶" },
-    jump: { x: 735, y: 315, r: 40, active: false, label: "▲" }
-};
-
-function handleTouch(e) {
-    e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-
-    keys.left = false; keys.right = false; keys.jump = false;
-    canvasButtons.left.active = false; canvasButtons.right.active = false; canvasButtons.jump.active = false;
-
-    if (e.touches.length > 0) {
-        for (let i = 0; i < e.touches.length; i++) {
-            let touch = e.touches[i];
-            let touchX = ((touch.clientX - rect.left) / rect.width) * canvas.width;
-            let touchY = ((touch.clientY - rect.top) / rect.height) * canvas.height;
-
-            for (let key in canvasButtons) {
-                let btn = canvasButtons[key];
-                let dist = Math.hypot(touchX - btn.x, touchY - btn.y);
-                if (dist < btn.r + 12) { 
-                    keys[key] = true;
-                    btn.active = true;
-                }
-            }
-        }
-    }
-}
-
-function clearTouch(e) {
-    e.preventDefault();
-    if (e.touches.length === 0) {
-        keys.left = false; keys.right = false; keys.jump = false;
-        canvasButtons.left.active = false; canvasButtons.right.active = false; canvasButtons.jump.active = false;
-    } else {
-        handleTouch(e);
-    }
-}
-
-canvas.addEventListener("touchstart", handleTouch, { passive: false });
-canvas.addEventListener("touchmove", handleTouch, { passive: false });
-canvas.addEventListener("touchend", clearTouch, { passive: false });
-canvas.addEventListener("touchcancel", clearTouch, { passive: false });
-
-function handleMouse(e, isDown) {
-    const rect = canvas.getBoundingClientRect();
-    let mouseX = ((e.clientX - rect.left) / rect.width) * canvas.width;
-    let mouseY = ((e.clientY - rect.top) / rect.height) * canvas.height;
-
-    keys.left = false; keys.right = false; keys.jump = false;
-    canvasButtons.left.active = false; canvasButtons.right.active = false; canvasButtons.jump.active = false;
-
-    if (!isDown) return;
-
-    for (let key in canvasButtons) {
-        let btn = canvasButtons[key];
-        let dist = Math.hypot(mouseX - btn.x, mouseY - btn.y);
-        if (dist < btn.r) {
-            keys[key] = true;
-            btn.active = true;
-        }
-    }
-}
-canvas.addEventListener("mousedown", (e) => handleMouse(e, true));
-canvas.addEventListener("mouseup", (e) => handleMouse(e, false));
-canvas.addEventListener("mouseleave", (e) => handleMouse(e, false));
-
-function createParticles(x, y, color, count = 5) {
-    for (let i = 0; i < count; i++) {
-        particles.push({
-            x: x,
-            y: y,
-            vx: (Math.random() - 0.5) * 3,
-            vy: (Math.random() - 0.5) * 3,
-            size: Math.random() * 4 + 2,
-            alpha: 1,
-            color: color
-        });
-    }
-}
-
-// MILIMETRIK PLATFORM ALGORITMASI (KEDILER TAMAMEN KALDIRILDI)
-function generateLevel(lvl) {
-    let difficulty = Math.min(lvl / 25, 5); 
-    let seed = lvl * 1543;
-    function randomSeed() {
-        let x = Math.sin(seed++) * 10000;
-        return x - Math.floor(x);
-    }
-
-    let levelData = {
-        platforms: [{ x: 0, y: 340, width: 140, height: 60, type: 'normal' }],
-        dotPiece: { x: 350, y: 180, width: 24, height: 24 },
-        portal: { x: 745, y: 280, width: 45, height: 60 },
-        hazards: [], // Kediler tamamen temizlendi
-        chocolates: [] 
-    };
-
-    let currentX = 160;
-    let currentY = 240 + Math.floor(randomSeed() * 60);
-
-    for (let i = 0; i < 4; i++) {
-        let pWidth = Math.max(120 - (difficulty * 11) - Math.floor(randomSeed() * 20), 45);
-        let stepGap = 120 + (difficulty * 9) + Math.floor(randomSeed() * 25);
-
-        let pType = 'normal';
-        let rType = randomSeed();
-        if (lvl > 4 && rType > 0.65) pType = 'crumbling';
-        if (lvl > 10 && rType <= 0.35) pType = 'moving';
-        if (lvl > 25 && rType > 0.35 && rType <= 0.65) pType = 'crumbling';
-
-        levelData.platforms.push({ 
-            x: currentX, 
-            y: currentY, 
-            width: pWidth, 
-            height: 15, 
-            type: pType,
-            startY: currentY,
-            startX: currentX,
-            range: 35 + (difficulty * 12) + Math.floor(randomSeed() * 20),
-            speed: 0.015 + (difficulty * 0.008) + (randomSeed() * 0.01),
-            angle: randomSeed() * Math.PI * 2,
-            moveDir: randomSeed() > 0.5 ? 'vertical' : 'horizontal',
-            stepped: false,
-            stepTime: 0,
-            broken: false
-        });
-
-        // Altın Çikolatalar Yerleşimi
-        if (randomSeed() > 0.45) {
-            levelData.chocolates.push({
-                x: currentX + (pWidth / 2) - 8,
-                y: currentY - 25,
-                width: 16,
-                height: 16,
-                collected: false
-            });
-        }
-
-        if (i === Math.floor(randomSeed() * 3) + 1 || i === 2) {
-            levelData.dotPiece.x = currentX + (pWidth / 2) - 12;
-            levelData.dotPiece.y = currentY - 35 - Math.floor(randomSeed() * 20);
-        }
-
-        currentX += stepGap;
-        currentY += Math.floor(randomSeed() * 90) - 45;
-        currentY = Math.max(140, Math.min(currentY, 310));
-    }
-
-    levelData.platforms.push({ x: 730, y: 340, width: 70, height: 60, type: 'normal' });
-    return levelData;
-}
-
-let activeLevel = generateLevel(currentLevel);
-document.getElementById("levelText").innerText = currentLevel;
-
-const changeBtn = document.getElementById("changeCharBtn");
-changeBtn.innerText = characterList[activeCharIndex].name;
-changeBtn.style.backgroundColor = characterList[activeCharIndex].color;
-
-changeBtn.addEventListener("click", () => {
-    activeCharIndex++;
-    if (activeCharIndex > unlockedCharIndex || activeCharIndex >= characterList.length) {
-        activeCharIndex = 0; 
-    }
-    changeBtn.innerText = characterList[activeCharIndex].name;
-    changeBtn.style.backgroundColor = characterList[activeCharIndex].color;
-    changeBtn.classList.remove("active");
-});
-
-document.getElementById("resetGameBtn").addEventListener("click", () => {
-    if(confirm("Tüm hardcore ilerlemeni sıfırlamak istediğine emin misin?")) {
-        localStorage.clear();
-        currentLevel = 1;
-        unlockedCharIndex = 0;
-        activeCharIndex = 0;
-        levelTimer = 25;
-        levelPieceCollected = false;
-        activeLevel = generateLevel(currentLevel);
-        document.getElementById("levelText").innerText = currentLevel;
-        document.getElementById("piecesText").innerText = "0 / 1";
-        changeBtn.innerText = characterList[activeCharIndex].name;
-        changeBtn.style.backgroundColor = characterList[activeCharIndex].color;
-        changeBtn.classList.remove("active");
-        resetPosition(true); 
-    }
-});
-
-function checkCollision(obj1, obj2) {
-    return obj1.x < obj2.x + obj2.width &&
-           obj1.x + (obj1.w || obj1.width) > obj2.x &&
-           obj1.y < obj2.y + obj2.height &&
-           obj1.y + (obj1.h || obj1.height) > obj2.y;
-}
-
+// Klavye Kontrolleri
 window.addEventListener("keydown", (e) => {
     if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = true;
     if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = true;
-    if (e.code === "ArrowUp" || e.code === "Space" || e.code === "KeyW") keys.jump = true;
+    if (e.code === "ArrowUp" || e.code === "Space" || e.code === "KeyW") {
+        if(!keys.jump) jumpBufferTimer = JUMP_BUFFER_MAX;
+        keys.jump = true;
+    }
 });
 window.addEventListener("keyup", (e) => {
     if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = false;
@@ -415,303 +159,245 @@ window.addEventListener("keyup", (e) => {
     if (e.code === "ArrowUp" || e.code === "Space" || e.code === "KeyW") keys.jump = false;
 });
 
-function update() {
-    let now = Date.now();
-    if (now - lastTimeUpdate >= 1000) {
-        levelTimer--;
-        document.getElementById("timerText").innerText = levelTimer;
-        lastTimeUpdate = now;
-
-        if (levelTimer <= 0) {
-            triggerDamageEffect();
-            resetPosition(true); 
-            return;
-        }
+function createParticles(x, y, color, count = 5) {
+    for (let i = 0; i < count; i++) {
+        particles.push({ x: x, y: y, vx: (Math.random() - 0.5) * 3, vy: (Math.random() - 0.5) * 3, size: Math.random() * 4 + 2, alpha: 1, color: color });
     }
+}
 
-    // GÜNCELLEME: Seçili Karakterin Hardcore İstatistiklerini Uygula
+function triggerScreenShake(intensity = 5) { screenShakeFrames = intensity; }
+
+// Seviye Üretimi (Güvenli atlama mesafeleri gözetilerek)
+function generateLevel(lvl) {
+    let difficulty = Math.min(lvl / 25, 5); 
+    let seed = lvl * 1543;
+    function randomSeed() { let x = Math.sin(seed++) * 10000; return x - Math.floor(x); }
+
+    let levelData = {
+        platforms: [{ x: 0, y: 340, width: 140, height: 60, type: 'normal' }],
+        dotPiece: { x: 350, y: 180, width: 24, height: 24 },
+        portal: { x: 745, y: 280, width: 45, height: 60 },
+        chocolates: []
+    };
+
+    let currentX = 160;
+    let currentY = 240 + Math.floor(randomSeed() * 60);
+
+    for (let i = 0; i < 4; i++) {
+        let pWidth = Math.max(120 - (difficulty * 11), 50);
+        // Maksimum atlama boşluğu sınırlandırıldı (İmkansız bölümleri engellemek için)
+        let stepGap = 80 + (difficulty * 5) + Math.floor(randomSeed() * 30); 
+
+        levelData.platforms.push({ 
+            x: currentX, y: currentY, width: pWidth, height: 15, type: 'normal', broken: false 
+        });
+
+        if (randomSeed() > 0.40) {
+            levelData.chocolates.push({ x: currentX + (pWidth / 2) - 8, y: currentY - 25, width: 16, height: 16, collected: false });
+        }
+
+        if (i === 2) { levelData.dotPiece.x = currentX + (pWidth / 2) - 12; levelData.dotPiece.y = currentY - 40; }
+
+        currentX += stepGap;
+        currentY += Math.floor(randomSeed() * 60) - 30;
+        currentY = Math.max(140, Math.min(currentY, 310));
+    }
+    levelData.platforms.push({ x: 730, y: 340, width: 70, height: 60, type: 'normal' });
+    return levelData;
+}
+
+let activeLevel = generateLevel(currentLevel);
+document.getElementById("levelText").innerText = currentLevel;
+
+function checkCollision(obj1, obj2) {
+    return obj1.x < obj2.x + obj2.width && obj1.x + (obj1.w || obj1.width) > obj2.x &&
+           obj1.y < obj2.y + obj2.height && obj1.y + (obj1.h || obj1.height) > obj2.y;
+}
+
+function handleDeath() {
+    if(isGameOver) return;
+    isGameOver = true;
+    triggerScreenShake(15);
+    document.getElementById("gameOverScreen").style.display = "flex";
+    document.getElementById("touchZones").style.pointerEvents = "none";
+}
+
+document.getElementById("adReviveBtn").addEventListener("click", () => {
+    // Reklam izleme simülasyonu
+    document.getElementById("adReviveBtn").innerText = "REKLAM YÜKLENİYOR...";
+    setTimeout(() => {
+        isGameOver = false;
+        player.y = 0; // Yukarıdan güvenli bırak
+        player.velY = 0;
+        document.getElementById("gameOverScreen").style.display = "none";
+        document.getElementById("touchZones").style.pointerEvents = "auto";
+        document.getElementById("adReviveBtn").innerText = "▶ REKLAM İZLE & DİRİL";
+    }, 1000);
+});
+
+document.getElementById("restartLevelBtn").addEventListener("click", () => {
+    isGameOver = false;
+    player.x = 60; player.y = 200; player.velX = 0; player.velY = 0;
+    levelPieceCollected = false; document.getElementById("piecesText").innerText = "0/1";
+    activeLevel = generateLevel(currentLevel); // Aynı bölümü sıfırla
+    document.getElementById("gameOverScreen").style.display = "none";
+    document.getElementById("touchZones").style.pointerEvents = "auto";
+});
+
+
+function update(dtTime) {
+    if (isGameOver) return;
+    
+    // FPS Bağımsızlık Çarpanı (Hedef: 60fps -> 16.6ms per frame)
+    let timeScale = dtTime / 16.666;
+    if(timeScale > 3) timeScale = 3; // Sekme anlarında (sekme değiştirme vs) devasa atlamaları önler
+
     let curChar = characterList[activeCharIndex];
     player.speed = curChar.speed;
-    
-    if (curChar.name === "Squeak") {
-        friction = 0.92; // Yapışkan/jöle gibi kayma efekti
-    } else {
-        friction = 0.80; // Standart keskin duruşlar
-    }
 
-    if (keys.left) { if (player.velX > -player.speed) player.velX -= 0.85; }
-    if (keys.right) { if (player.velX < player.speed) player.velX += 0.85; }
-    if (keys.jump && !player.jumping && player.grounded) {
-        player.jumping = true;
-        player.grounded = false;
-        player.velY = curChar.jump; // Karakter bazlı hardcore sıçrama gücü
-        createParticles(player.x + player.w/2, player.y + player.h, '#ffffff', 6);
-    }
-
-    player.velX *= friction;
-    player.velY += gravity;
+    let wasGrounded = player.grounded;
     player.grounded = false;
 
+    // Yatay Hareket
+    if (keys.left) { if (player.velX > -player.speed) player.velX -= 0.85 * timeScale; }
+    if (keys.right) { if (player.velX < player.speed) player.velX += 0.85 * timeScale; }
+    player.velX *= Math.pow(friction, timeScale); // Zaman bazlı sürtünme
+
+    // Coyote Time ve Jump Buffer Düşüşü
+    if(wasGrounded) coyoteTimer = COYOTE_TIME_MAX;
+    else coyoteTimer -= (dtTime / 1000);
+    
+    if(jumpBufferTimer > 0) jumpBufferTimer -= (dtTime / 1000);
+
+    // Mükemmel Zıplama Kontrolü
+    if (jumpBufferTimer > 0 && coyoteTimer > 0) {
+        player.velY = curChar.jump;
+        coyoteTimer = 0; 
+        jumpBufferTimer = 0;
+        createParticles(player.x + player.w/2, player.y + player.h, '#ffffff', 8);
+    }
+
+    player.velY += gravity * timeScale;
+
+    // Y Ekseni Çarpışma ve Yer Kontrolü
     activeLevel.platforms.forEach(p => {
-        if (p.broken) return;
-
-        if (p.type === 'moving') {
-            p.angle += p.speed;
-            if (p.moveDir === 'vertical') {
-                p.y = p.startY + Math.sin(p.angle) * p.range;
-            } else {
-                p.x = p.startX + Math.sin(p.angle) * p.range;
-            }
-        }
-
-        if (p.type === 'crumbling' && p.stepped) {
-            if (Date.now() - p.stepTime > 1000) {
-                p.broken = true; 
-                createParticles(p.x + p.width/2, p.y + p.height/2, '#10b981', 8);
-            }
-        }
-
         if (player.x + player.w > p.x && player.x < p.x + p.width &&
-            player.y + player.h <= p.y + 10 && player.y + player.h + player.velY >= p.y) {
-
+            player.y + player.h <= p.y + 15 && player.y + player.h + player.velY >= p.y) {
             player.grounded = true;
-            player.jumping = false;
             player.velY = 0;
             player.y = p.y - player.h;
-
-            if (p.type === 'moving' && p.moveDir === 'horizontal') {
-                player.x += Math.cos(p.angle) * (p.range * p.speed); 
-            }
-
-            if (p.type === 'crumbling' && !p.stepped) {
-                p.stepped = true;
-                p.stepTime = Date.now();
-            }
         }
     });
 
-    player.x += player.velX;
-    player.y += player.velY;
+    player.x += player.velX * timeScale;
+    player.y += player.velY * timeScale;
 
+    // Sınırlar ve Düşme
     if (player.x < 0) player.x = 0;
     if (player.x > canvas.width - player.w) player.x = canvas.width - player.w;
+    if (player.y > canvas.height + 50) handleDeath();
 
-    // Dünyadan aşağı düşme kontrolü
-    if (player.y > canvas.height) {
-        triggerDamageEffect();
-        resetPosition(true);
-    }
-
-    // Çikolata toplama kontrolü (+3sn bonus)
+    // Çikolata Toplama (Monetizasyon Altyapısı)
     activeLevel.chocolates.forEach(choc => {
         if (!choc.collected && checkCollision(player, choc)) {
             choc.collected = true;
-            levelTimer += 3;
-            document.getElementById("timerText").innerText = levelTimer;
-
-            let badge = document.getElementById("timeBadge");
-            badge.classList.remove("time-bonus");
-            void badge.offsetWidth; 
-            badge.classList.add("time-bonus");
-
+            totalCoins++;
+            localStorage.setItem("pets_coins", totalCoins);
+            document.getElementById("coinText").innerText = totalCoins;
             createParticles(choc.x + 8, choc.y + 8, '#f1c40f', 10);
         }
     });
 
+    // Parça Toplama
     if (!levelPieceCollected && checkCollision(player, activeLevel.dotPiece)) {
         levelPieceCollected = true;
-        document.getElementById("piecesText").innerText = "1 / 1";
+        document.getElementById("piecesText").innerText = "1/1";
+        triggerScreenShake(3);
         createParticles(activeLevel.dotPiece.x + 12, activeLevel.dotPiece.y + 12, '#00ffff', 15);
     }
 
+    // Portal (Seviye Geçişi)
     if (levelPieceCollected && checkCollision(player, activeLevel.portal)) {
         currentLevel++;
-        saveProgress(); 
-
-        if (currentLevel <= 150) {
-            activeLevel = generateLevel(currentLevel);
-            levelPieceCollected = false;
-            document.getElementById("levelText").innerText = currentLevel;
-            document.getElementById("piecesText").innerText = "0 / 1";
-            canvas.style.background = `hsl(${(currentLevel * 65) % 360}, 25%, 12%)`; // Hardcore koyu arka planlar
-
-            // GÜNCELLEME: 9 Karaktere göre uyarlanmış açılma baremi (Her 5 seviyede bir yeni pet)
-            if (currentLevel % 5 === 1 && currentLevel > 1) {
-                let nextTargetIndex = Math.floor((currentLevel - 1) / 5);
-                if (nextTargetIndex < characterList.length) {
-                    unlockedCharIndex = nextTargetIndex;
-                    saveProgress();
-                    if (unlockedCharIndex > activeCharIndex) {
-                        changeBtn.classList.add("active");
-                    }
-                }
-            }
-            resetPosition(true); 
-        } else {
-            alert("TEBRİKLER! HARDCORE ARENA BİTTİ! 🏆");
-            currentLevel = 1;
-            saveProgress();
-        }
+        localStorage.setItem("pets_level", currentLevel);
+        activeLevel = generateLevel(currentLevel);
+        levelPieceCollected = false;
+        document.getElementById("levelText").innerText = currentLevel;
+        document.getElementById("piecesText").innerText = "0/1";
+        triggerScreenShake(8);
+        player.x = 60; player.y = 200; player.velX = 0; player.velY = 0;
     }
 
+    // Partiküllerin Güncellenmesi
     for (let i = particles.length - 1; i >= 0; i--) {
         let p = particles[i];
-        p.x += p.vx; p.y += p.vy;
-        p.alpha -= 0.025;
+        p.x += p.vx * timeScale; p.y += p.vy * timeScale;
+        p.alpha -= 0.025 * timeScale;
         if (p.alpha <= 0) particles.splice(i, 1);
-    }
-    portalPulseAngle += 0.05;
-}
-
-function triggerDamageEffect() {
-    flashRedFrames = 12;
-}
-
-function resetPosition(resetTime) {
-    player.x = 60;
-    player.y = 200;
-    player.velX = 0;
-    player.velY = 0;
-
-    levelPieceCollected = false;
-    document.getElementById("piecesText").innerText = "0 / 1";
-
-    if (resetTime) {
-        levelTimer = 25; 
-        document.getElementById("timerText").innerText = levelTimer;
-    }
-
-    activeLevel.platforms.forEach(p => {
-        if (p.type === 'crumbling') {
-            p.stepped = false;
-            p.broken = false;
-        }
-    });
-
-    if(activeLevel.chocolates) {
-        activeLevel.chocolates.forEach(choc => choc.collected = false);
     }
 }
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Platformları Çiz (Hardcore Koyu V3 Teması)
-    activeLevel.platforms.forEach(p => {
-        if (p.broken) return;
+    ctx.save();
+    // Ekran Sarsıntısı Uygulaması
+    if (screenShakeFrames > 0) {
+        let dx = (Math.random() - 0.5) * screenShakeFrames;
+        let dy = (Math.random() - 0.5) * screenShakeFrames;
+        ctx.translate(dx, dy);
+        screenShakeFrames--;
+    }
 
-        if (p.type === 'normal') ctx.fillStyle = "#047857"; 
-        else if (p.type === 'moving') ctx.fillStyle = "#1d4ed8"; 
-        else if (p.type === 'crumbling') {
-            if (p.stepped) {
-                let elapsed = Date.now() - p.stepTime;
-                ctx.fillStyle = elapsed > 650 ? "#b91c1c" : "#eab308";
-            } else {
-                ctx.fillStyle = "#b45309"; 
-            }
-        }
-        ctx.fillRect(p.x, p.y, p.width, p.height);
-        
-        // Üst Neon Şerit Çizgisi
-        ctx.fillStyle = "#10b981";
-        ctx.fillRect(p.x, p.y, p.width, 3);
+    // Platform Çizimi
+    activeLevel.platforms.forEach(p => {
+        ctx.fillStyle = "#047857"; ctx.fillRect(p.x, p.y, p.width, p.height);
+        ctx.fillStyle = "#10b981"; ctx.fillRect(p.x, p.y, p.width, 3);
     });
 
-    // Altın Çikolataları Çiz
-    if (activeLevel.chocolates) {
-        activeLevel.chocolates.forEach(choc => {
-            if (choc.collected) return;
-            ctx.fillStyle = "#f1c40f"; 
-            ctx.fillRect(choc.x, choc.y, choc.width, choc.height);
-            ctx.fillStyle = "#d35400";
-            ctx.fillRect(choc.x + 4, choc.y + 4, 8, 8);
-        });
-    }
-
-    // Dot Parçasını Çiz
-    if (!levelPieceCollected) {
-        if (images.Dot.complete && images.Dot.naturalWidth !== 0) {
-            ctx.drawImage(images.Dot, activeLevel.dotPiece.x, activeLevel.dotPiece.y, activeLevel.dotPiece.width, activeLevel.dotPiece.height);
-        } else {
-            ctx.fillStyle = "#00ffff";
-            ctx.beginPath();
-            ctx.arc(activeLevel.dotPiece.x + 12, activeLevel.dotPiece.y + 12, 10, 0, Math.PI * 2);
-            ctx.fill();
+    // Çikolata Çizimi
+    activeLevel.chocolates.forEach(choc => {
+        if (!choc.collected) {
+            ctx.fillStyle = "#f1c40f"; ctx.fillRect(choc.x, choc.y, choc.width, choc.height);
+            ctx.fillStyle = "#d35400"; ctx.fillRect(choc.x + 4, choc.y + 4, 8, 8);
         }
+    });
+
+    // Dot Parçası Çizimi
+    if (!levelPieceCollected) {
+        ctx.fillStyle = "#00ffff";
+        ctx.beginPath(); ctx.arc(activeLevel.dotPiece.x + 12, activeLevel.dotPiece.y + 12, 10, 0, Math.PI * 2); ctx.fill();
     }
 
-    // Portal Efekti
-    let portalPulse = Math.sin(portalPulseAngle) * 6;
-    ctx.fillStyle = levelPieceCollected ? "rgba(139, 92, 246, 0.3)" : "rgba(75, 85, 99, 0.2)";
-    ctx.fillRect(activeLevel.portal.x - portalPulse/2, activeLevel.portal.y - portalPulse/2, activeLevel.portal.width + portalPulse, activeLevel.portal.height + portalPulse);
-
+    // Portal Çizimi
     ctx.fillStyle = levelPieceCollected ? "#8b5cf6" : "#4b5563";
     ctx.fillRect(activeLevel.portal.x, activeLevel.portal.y, activeLevel.portal.width, activeLevel.portal.height);
 
-    // Aktif Karakteri Çiz (Gelişmiş Göz Detayıyla)
-    let curChar = characterList[activeCharIndex];
-    if (images[curChar.name] && images[curChar.name].complete && images[curChar.name].naturalWidth !== 0) {
-        ctx.drawImage(images[curChar.name], player.x, player.y, player.w, player.h);
-    } else {
-        ctx.fillStyle = curChar.color;
-        ctx.fillRect(player.x, player.y, player.w, player.h);
-        
-        // Karakter Harf Etiketi
-        ctx.fillStyle = "#000";
-        ctx.font = "bold 11px Arial";
-        ctx.fillText(curChar.letter, player.x + (player.w/2) - (curChar.letter.length * 3.5), player.y + 20);
-    }
+    // Karakter Çizimi
+    ctx.fillStyle = characterList[activeCharIndex].color;
+    // Stretch efekti (Zıplarken uzama, düşerken ezilme animasyon yanılsaması)
+    let stretchY = 1 + (Math.abs(player.velY) * 0.02);
+    let stretchX = 1 - (Math.abs(player.velY) * 0.015);
+    ctx.fillRect(player.x + (player.w - player.w * stretchX)/2, player.y + (player.h - player.h * stretchY), player.w * stretchX, player.h * stretchY);
 
-    // Partikülleri Çiz
+    // Partiküller Çizimi
     particles.forEach(p => {
-        ctx.save();
-        ctx.globalAlpha = p.alpha;
-        ctx.fillStyle = p.color;
-        ctx.fillRect(p.x, p.y, p.size, p.size);
-        ctx.restore();
+        ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size);
     });
 
-    // Hasar/Düşme Durumunda Ekranı Kırmızıya Boyama
-    if (flashRedFrames > 0) {
-        ctx.fillStyle = `rgba(220, 38, 38, ${flashRedFrames / 25})`;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        flashRedFrames--;
-    }
-
-    // CANVAS BUTONLARI (Dokunmatik Kontroller)
-    for (let key in canvasButtons) {
-        let btn = canvasButtons[key];
-        ctx.save();
-        if (key === "jump") {
-            ctx.fillStyle = btn.active ? "#991b1b" : "#dc2626";
-        } else {
-            ctx.fillStyle = btn.active ? "#111827" : "#1f2937";
-        }
-        ctx.strokeStyle = "#10b981";
-        ctx.lineWidth = 3;
-
-        ctx.beginPath();
-        ctx.arc(btn.x, btn.y, btn.r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.fillStyle = "#ffffff";
-        ctx.font = `bold ${key === 'jump' ? '32px' : '26px'} Arial`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(btn.label, btn.x, btn.y + (key === 'jump' ? -2 : 1));
-        ctx.restore();
-    }
+    ctx.restore();
 }
 
-function gameLoop() {
-    update();
+function gameLoop(timestamp) {
+    let dt = timestamp - lastTime;
+    lastTime = timestamp;
+    
+    update(dt);
     draw();
     requestAnimationFrame(gameLoop);
 }
 
-gameLoop();
+requestAnimationFrame((t) => { lastTime = t; requestAnimationFrame(gameLoop); });
 </script>
 </body>
 </html>
-
