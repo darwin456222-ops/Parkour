@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>The Pets: Hardcore Arena V5 (Dash & Double Jump)</title>
+    <title>The Pets: Hardcore Arena V5.1 (Sabit Tuşlar)</title>
     <style>
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; margin: 0; padding: 0; }
         body {
@@ -79,7 +79,6 @@ const characterList = [
     { name: "Squeak", color: "#38bdf8", speed: 5.3, jump: -11.0 }
 ];
 
-// Görselleri Yükle
 const images = {};
 characterList.forEach(char => {
     images[char.name] = new Image();
@@ -88,28 +87,22 @@ characterList.forEach(char => {
 images.Dot = new Image();
 images.Dot.src = 'Dot.jpg';
 
-// Veriler ve Durumlar
 let currentLevel = parseInt(localStorage.getItem("pets_level")) || 1;
 let totalCoins = parseInt(localStorage.getItem("pets_coins")) || 0;
 document.getElementById("coinText").innerText = totalCoins;
 
 let activeCharIndex = 0;
 let levelPieceCollected = false;
-let isGameOver = false;
 
-// Süre Sistemi
 let levelTimer = 25;
 let msTimer = 0;
 
-// Ekran Sarsıntısı ve Hasar
 let screenShakeFrames = 0;
 let flashRedFrames = 0;
 let particles = [];
 
-// Kontroller
 let keys = { left: false, right: false, jump: false, dash: false };
 
-// Fizik, Game Feel ve Yeni Yetenekler (Dash & Çift Zıplama)
 let lastTime = performance.now();
 const gravity = 0.52;
 let friction = 0.80;
@@ -121,73 +114,68 @@ const JUMP_BUFFER_MAX = 0.15;
 const player = { 
     x: 60, y: 200, w: 32, h: 32, 
     velX: 0, velY: 0, grounded: false, speed: 4.4,
-    facingDir: 1, // 1 sağ, -1 sol
-    jumpsMade: 0, // Çift zıplama takibi
-    dashTimer: 0, 
-    dashCooldownTimer: 0 
+    facingDir: 1, jumpsMade: 0, dashTimer: 0, dashCooldownTimer: 0 
 };
 
-// Canvas Üzerindeki Görünür Tuşlar (Dash Tuşu Eklendi)
+// BUTON KONUMLARI
 const canvasButtons = {
     left: { x: 55, y: 325, r: 35, active: false, label: "◀" },
     right: { x: 145, y: 325, r: 35, active: false, label: "▶" },
-    dash: { x: 635, y: 325, r: 30, active: false, label: "⚡" }, // Yeni Dash Tuşu
+    dash: { x: 635, y: 325, r: 30, active: false, label: "⚡" },
     jump: { x: 735, y: 315, r: 40, active: false, label: "▲" }
 };
 
-function handleTouchMouse(x, y, isDown) {
-    keys.left = keys.right = keys.jump = keys.dash = false;
+// --- YENİ KUSURSUZ ÇOKLU DOKUNMATİK SİSTEMİ ---
+function updateTouches(e) {
+    if(e) e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    
+    let prevJump = keys.jump;
+
+    // Önce tüm tuşları sıfırla
+    keys.left = keys.right = keys.dash = keys.jump = false;
     for (let key in canvasButtons) canvasButtons[key].active = false;
 
-    if (!isDown) return;
+    // Ekranda basılı olan TÜM parmakları tara
+    if (e && e.touches) {
+        for(let i = 0; i < e.touches.length; i++) {
+            let tx = ((e.touches[i].clientX - rect.left) / rect.width) * canvas.width;
+            let ty = ((e.touches[i].clientY - rect.top) / rect.height) * canvas.height;
 
-    for (let key in canvasButtons) {
-        let btn = canvasButtons[key];
-        let dist = Math.hypot(x - btn.x, y - btn.y);
-        if (dist < btn.r + 15) { // 15px ekstra dokunma toleransı
-            keys[key] = true;
-            btn.active = true;
-            if(key === 'jump') jumpBufferTimer = JUMP_BUFFER_MAX;
+            for (let key in canvasButtons) {
+                let btn = canvasButtons[key];
+                // Dokunma toleransını (hitbox) +30 piksel yaptık ki parmak kaysa bile çalışsın
+                let dist = Math.hypot(tx - btn.x, ty - btn.y);
+                if (dist < btn.r + 30) { 
+                    keys[key] = true;
+                    btn.active = true;
+                }
+            }
         }
+    }
+
+    // Tampon bellek kontrolü (Erken zıplamayı kaydet)
+    if (!prevJump && keys.jump) {
+        jumpBufferTimer = JUMP_BUFFER_MAX;
     }
 }
 
-// Dokunmatik Eventler
-canvas.addEventListener("touchstart", (e) => {
-    e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    for(let i=0; i<e.touches.length; i++) {
-        let tx = ((e.touches[i].clientX - rect.left) / rect.width) * canvas.width;
-        let ty = ((e.touches[i].clientY - rect.top) / rect.height) * canvas.height;
-        handleTouchMouse(tx, ty, true);
-    }
-}, { passive: false });
+// Tüm dokunmatik olayları aynı güçlü fonksiyona bağladık
+canvas.addEventListener("touchstart", updateTouches, { passive: false });
+canvas.addEventListener("touchmove", updateTouches, { passive: false });
+canvas.addEventListener("touchend", updateTouches, { passive: false });
+canvas.addEventListener("touchcancel", updateTouches, { passive: false });
 
-canvas.addEventListener("touchend", (e) => {
-    e.preventDefault();
-    if(e.touches.length === 0) handleTouchMouse(0,0, false);
-    else {
-        // Kalan parmakları yeniden değerlendir
-        const rect = canvas.getBoundingClientRect();
-        keys.left = keys.right = keys.jump = keys.dash = false;
-        for (let key in canvasButtons) canvasButtons[key].active = false;
-        for(let i=0; i<e.touches.length; i++) {
-            let tx = ((e.touches[i].clientX - rect.left) / rect.width) * canvas.width;
-            let ty = ((e.touches[i].clientY - rect.top) / rect.height) * canvas.height;
-            handleTouchMouse(tx, ty, true);
-        }
-    }
-}, { passive: false });
-
-// Mouse Eventler
+// Mouse Desteği (Bilgisayar testleri için)
 canvas.addEventListener("mousedown", (e) => {
     const rect = canvas.getBoundingClientRect();
-    handleTouchMouse(((e.clientX - rect.left)/rect.width)*canvas.width, ((e.clientY - rect.top)/rect.height)*canvas.height, true);
+    let eFake = { touches: [{ clientX: e.clientX, clientY: e.clientY }] };
+    updateTouches(eFake);
 });
-canvas.addEventListener("mouseup", () => handleTouchMouse(0,0, false));
-canvas.addEventListener("mouseleave", () => handleTouchMouse(0,0, false));
+canvas.addEventListener("mouseup", () => updateTouches({ touches: [] }));
+canvas.addEventListener("mouseleave", () => updateTouches({ touches: [] }));
 
-// Klavye (Dash için Shift veya E eklendi)
+// Klavye Kontrolleri
 window.addEventListener("keydown", (e) => {
     if (e.code === "ArrowLeft" || e.code === "KeyA") { keys.left = true; canvasButtons.left.active = true; }
     if (e.code === "ArrowRight" || e.code === "KeyD") { keys.right = true; canvasButtons.right.active = true; }
@@ -209,7 +197,9 @@ function createParticles(x, y, color, count = 5) {
         particles.push({ x: x, y: y, vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4, size: Math.random() * 4 + 2, alpha: 1, color: color });
     }
 }
+
 function triggerScreenShake(intensity = 5) { screenShakeFrames = intensity; }
+
 function handleDeath() {
     flashRedFrames = 15;
     triggerScreenShake(12);
@@ -259,7 +249,6 @@ function checkCollision(obj1, obj2) {
 }
 
 function update(dtTime) {
-    // SÜRE YÖNETİMİ
     msTimer += dtTime;
     if(msTimer >= 1000) {
         levelTimer--; msTimer = 0;
@@ -278,53 +267,45 @@ function update(dtTime) {
 
     if(wasGrounded) {
         coyoteTimer = COYOTE_TIME_MAX;
-        player.jumpsMade = 0; // Yere basınca çift zıplama hakkı sıfırlanır
+        player.jumpsMade = 0; 
     } else {
         coyoteTimer -= (dtTime / 1000);
     }
     if(jumpBufferTimer > 0) jumpBufferTimer -= (dtTime / 1000);
     if(player.dashCooldownTimer > 0) player.dashCooldownTimer -= (dtTime / 1000);
 
-    // DASH (ATILMA) MEKANİĞİ BAŞLATMA
     if (keys.dash && player.dashCooldownTimer <= 0) {
-        player.dashTimer = 0.15; // 150ms boyunca atılma
-        player.dashCooldownTimer = 1.5; // 1.5 Saniye Soğuma
+        player.dashTimer = 0.15; 
+        player.dashCooldownTimer = 1.5; 
         triggerScreenShake(4);
     }
 
-    // HAREKET VE YERÇEKİMİ
     if (player.dashTimer > 0) {
-        // Dash Halindeyken (Yerçekimi iptal, yüksek hız)
         player.velX = player.facingDir * 14 * timeScale;
         player.velY = 0; 
         player.dashTimer -= (dtTime / 1000);
-        createParticles(player.x + player.w/2, player.y + player.h/2, curChar.color, 2); // Dash İzi
+        createParticles(player.x + player.w/2, player.y + player.h/2, curChar.color, 2); 
     } else {
-        // Normal Hareket
         if (keys.left) { player.facingDir = -1; if (player.velX > -player.speed) player.velX -= 0.85 * timeScale; }
         if (keys.right) { player.facingDir = 1; if (player.velX < player.speed) player.velX += 0.85 * timeScale; }
         player.velX *= Math.pow(friction, timeScale); 
         player.velY += gravity * timeScale;
     }
 
-    // ZIPLAMA VE ÇİFT ZIPLAMA (DOUBLE JUMP)
     if (jumpBufferTimer > 0) {
         if (coyoteTimer > 0) {
-            // Normal Zıplama
             player.velY = curChar.jump;
             player.jumpsMade = 1;
             coyoteTimer = 0; jumpBufferTimer = 0;
             createParticles(player.x + player.w/2, player.y + player.h, '#ffffff', 8);
         } else if (player.jumpsMade === 1 && player.dashTimer <= 0) {
-            // Çift Zıplama!
-            player.velY = curChar.jump * 0.9; // Çift zıplama %10 daha zayıf (dengeleme için)
+            player.velY = curChar.jump * 0.9; 
             player.jumpsMade = 2;
             jumpBufferTimer = 0;
-            createParticles(player.x + player.w/2, player.y + player.h, '#38bdf8', 12); // Mavi toz bulutu
+            createParticles(player.x + player.w/2, player.y + player.h, '#38bdf8', 12); 
         }
     }
 
-    // Platform Çarpışmaları
     activeLevel.platforms.forEach(p => {
         if (player.x + player.w > p.x && player.x < p.x + p.width &&
             player.y + player.h <= p.y + 15 && player.y + player.h + player.velY >= p.y) {
@@ -335,12 +316,10 @@ function update(dtTime) {
     player.x += player.velX * timeScale;
     player.y += player.velY * timeScale;
 
-    // Sınırlar
     if (player.x < 0) player.x = 0;
     if (player.x > canvas.width - player.w) player.x = canvas.width - player.w;
     if (player.y > canvas.height + 50) handleDeath();
 
-    // Çikolata Toplama (+3 Saniye Bonus)
     activeLevel.chocolates.forEach(choc => {
         if (!choc.collected && checkCollision(player, choc)) {
             choc.collected = true;
@@ -355,7 +334,6 @@ function update(dtTime) {
         }
     });
 
-    // Parça Toplama
     if (!levelPieceCollected && checkCollision(player, activeLevel.dotPiece)) {
         levelPieceCollected = true;
         document.getElementById("piecesText").innerText = "1/1";
@@ -363,7 +341,6 @@ function update(dtTime) {
         createParticles(activeLevel.dotPiece.x + 12, activeLevel.dotPiece.y + 12, '#00ffff', 15);
     }
 
-    // Portal (Geçiş)
     if (levelPieceCollected && checkCollision(player, activeLevel.portal)) {
         currentLevel++; localStorage.setItem("pets_level", currentLevel);
         activeLevel = generateLevel(currentLevel); levelPieceCollected = false;
@@ -382,7 +359,10 @@ function update(dtTime) {
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.save();
+    
+    // YENİ GÜNCELLEME: Çizim Katmanları Ayrıldı
+    // --- 1. KATMAN: OYUN DÜNYASI (SARSINTIDAN ETKİLENİR) ---
+    ctx.save(); 
     
     if (screenShakeFrames > 0) {
         let dx = (Math.random() - 0.5) * screenShakeFrames;
@@ -413,18 +393,13 @@ function draw() {
     ctx.fillStyle = levelPieceCollected ? "#8b5cf6" : "#4b5563";
     ctx.fillRect(activeLevel.portal.x, activeLevel.portal.y, activeLevel.portal.width, activeLevel.portal.height);
 
-    // Aktif Karakteri Çiz
     let curChar = characterList[activeCharIndex];
-    
-    // Stretch (Esnetme) Animasyonu
     let stretchY = 1 + (Math.abs(player.velY) * 0.02);
     let stretchX = 1 - (Math.abs(player.velY) * 0.015);
-    if(player.dashTimer > 0) { stretchX = 1.3; stretchY = 0.7; } // Atılırken incelme efekti
+    if(player.dashTimer > 0) { stretchX = 1.3; stretchY = 0.7; } 
 
     ctx.save();
-    ctx.translate(player.x + player.w/2, player.y + player.h); // Karakterin alt merkezinden esnetme
-    
-    // Karakterin baktığı yöne göre aynalama (Flip)
+    ctx.translate(player.x + player.w/2, player.y + player.h); 
     if(player.facingDir === -1) ctx.scale(-1, 1);
     
     if (images[curChar.name] && images[curChar.name].complete && images[curChar.name].naturalWidth !== 0) {
@@ -439,21 +414,23 @@ function draw() {
         ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size);
     });
 
+    ctx.restore(); // OYUN DÜNYASI BİTTİ - KAMERA SIFIRLANDI
+
+    // --- 2. KATMAN: UI VE BUTONLAR (SABİT KALIR, ASLA TİTREMEZ) ---
+    
     if (flashRedFrames > 0) {
         ctx.fillStyle = `rgba(220, 38, 38, ${flashRedFrames / 15})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height); flashRedFrames--;
     }
 
-    // CANVAS BUTONLARI ÇİZİMİ
     for (let key in canvasButtons) {
         let btn = canvasButtons[key];
         
         ctx.fillStyle = btn.active ? "#111827" : "#1f2937";
         if(key === 'jump') ctx.fillStyle = btn.active ? "#991b1b" : "#dc2626";
         if(key === 'dash') {
-            ctx.fillStyle = btn.active ? "#b45309" : "#f59e0b"; // Dash rengi turuncu/sarı
-            // Soğuma Süresi (Cooldown) Görseli
-            if(player.dashCooldownTimer > 0) ctx.fillStyle = "#4b5563"; // Beklerken gri
+            ctx.fillStyle = btn.active ? "#b45309" : "#f59e0b"; 
+            if(player.dashCooldownTimer > 0) ctx.fillStyle = "#4b5563"; 
         }
 
         ctx.strokeStyle = "#10b981"; ctx.lineWidth = 3;
@@ -465,7 +442,6 @@ function draw() {
         
         let labelOffset = key === 'jump' ? -2 : 1;
         
-        // Cooldown süresini butonun üzerine yaz
         if(key === 'dash' && player.dashCooldownTimer > 0) {
             ctx.font = "bold 16px Arial";
             ctx.fillText(player.dashCooldownTimer.toFixed(1), btn.x, btn.y + 1);
@@ -473,8 +449,6 @@ function draw() {
             ctx.fillText(btn.label, btn.x, btn.y + labelOffset);
         }
     }
-
-    ctx.restore();
 }
 
 function gameLoop(timestamp) {
